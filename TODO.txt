@@ -1,0 +1,9 @@
+1. Paddle v Wall Collision DONE
+2. ball v Paddle Collision
+3. second paddle
+4. score
+5. end game
+6. menu
+7. double buffering?
+8. legit frame rate limiting/control
+9. Autoscaling

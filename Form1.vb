@@ -7,56 +7,75 @@
     Dim testpaddle As paddle
     Dim sides(3) As Rectangle
     'Dim allPucks(10) As puck
+    Private Structure velocity
+        Public dX, dY, direction As Double
+        Public speed As Long
+    End Structure
     Private Structure puck
-        'Private Dim draw As System.Drawing
-        Public radius As Integer
+        Public length As Integer
         Public color As Brush
         Public location As Point
-        Public pixelsPerSec As Double
-        Public direction As Double
-        Private velocityX, velocityY As Double 'so i can access the X and Y velocities
+        Public velocity As velocity
         Private puckAsRect As Rectangle
+        Private graphics As Graphics
         Public Sub updatePos(ByVal ticksPerSec As Integer)
-            location.X = location.X + ((pixelsPerSec / ticksPerSec) * velocityX)
-            location.Y = location.Y + ((pixelsPerSec / ticksPerSec) * velocityY)
+            location.X = location.X + ((velocity.speed / ticksPerSec) * velocity.dx)
+            location.Y = location.Y + ((velocity.speed / ticksPerSec) * velocity.dy)
         End Sub
         Public Sub drawPuck()
-            Form1.pucks.FillEllipse(color, location.X, location.Y, radius, radius)
+            Form1.pucks.FillRectangle(color, location.X, location.Y, length, length)
         End Sub
-        Public Sub wallCollisionDirection(ByVal wallNum As Short)
-            ' MsgBox(direction)
-            If ((direction > 0 And direction <= 90) Or (direction > 180 And direction <= 270)) And (wallNum = 0 Or wallNum = 2) Then 'checks quad 1 and 3 against side walls
-                '  MsgBox("sidewall" & (direction > 0 And direction <= 90) & (direction > 180 And direction <= 270))
-                direction = (direction - 2 * (direction Mod 90)) + 180
-            ElseIf ((direction > 90 And direction <= 180) Or ((direction > 270 And direction <= 359) Or direction = 0)) And (wallNum = 1 Or wallNum = 3) Then 'checks quads 2 and 4 against top wall
-                direction = (direction - 2 * (direction Mod 90)) + 180
-            Else : direction = (direction - 2 * (direction Mod 90))
+        Public Sub Collisiondirection(ByVal wallNum As Short)
+            ' MsgBox(velocity.direction)
+            If ((velocity.direction > 0 And velocity.direction <= 90) Or (velocity.direction > 180 And velocity.direction <= 270)) And (wallNum = 0 Or wallNum = 2) Then 'checks quad 1 and 3 against side walls
+                '  MsgBox("sidewall" & (velocity.direction > 0 And velocity.direction <= 90) & (velocity.direction > 180 And velocity.direction <= 270))
+                velocity.direction = (velocity.direction - 2 * (velocity.direction Mod 90)) + 180
+            ElseIf ((velocity.direction > 90 And velocity.direction <= 180) Or ((velocity.direction > 270 And velocity.direction <= 359) Or velocity.direction = 0)) And (wallNum = 1 Or wallNum = 3) Then 'checks quads 2 and 4 against top wall
+                velocity.direction = (velocity.direction - 2 * (velocity.direction Mod 90)) + 180
+            Else : velocity.direction = (velocity.direction - 2 * (velocity.direction Mod 90))
             End If
-            If direction < 0 Then
-                direction = 360 - Math.Abs(direction Mod 360)
+            If velocity.direction < 0 Then
+                velocity.direction = 360 - Math.Abs(velocity.direction Mod 360)
             Else
-                direction = direction Mod 360
+                velocity.direction = velocity.direction Mod 360
             End If
             updateVelocity()
         End Sub
-        Private Sub updateVelocity()
-            velocityX = Math.Cos(direction * (Math.PI / 180))
-            velocityY = Math.Sin(direction * (Math.PI / 180))
-            'MsgBox(velocityY)
+        Public Sub CollisionDirection(ByVal _paddle As paddle)
+
         End Sub
-        Public Sub initPuck(ByVal Color_ As Brush, ByVal location_ As Point, ByVal radius_ As Integer, ByVal direction_ As Double, ByVal pixelsPerSec_ As Double)
+        Private Sub updateVelocity()
+            velocity.dX = Math.Cos(velocity.direction * (Math.PI / 180))
+            velocity.dY = Math.Sin(velocity.direction * (Math.PI / 180))
+            'MsgBox(velocity.dy)
+        End Sub
+        Public Sub initPuck(ByVal Color_ As Brush, ByVal location_ As Point, ByVal length_ As Integer, ByVal direction_ As Double, ByVal speed_ As Double)
             color = Color_
             location = location_
-            radius = radius_
-            direction = direction_
-            pixelsPerSec = pixelsPerSec_
+            length = length_
+            velocity.direction = direction_
+            velocity.speed = speed_
             updateVelocity()
             drawPuck()
             'puckAsRect.X = location.X
             'puckAsRect.Y = 
         End Sub
         Public Function isColliding(ByVal _rectangle As Rectangle)
-            If _rectangle.IntersectsWith(New Rectangle(location.X, location.Y, radius * 2, radius * 2)) Then
+            If _rectangle.IntersectsWith(New Rectangle(location.X, location.Y, length, length)) Then
+                Return False
+            Else
+                Return True
+            End If
+        End Function
+        Public Function isColliding(ByVal _paddle As paddle)
+            If _paddle.defRect.IntersectsWith(New Rectangle(location.X, location.Y, length, length)) Then
+                Return False
+            Else
+                Return True
+            End If
+        End Function
+        Public Function isColliding(ByVal _puck As puck)
+            If New Rectangle(_puck.location.X, _puck.location.Y, _puck.length, _puck.length).IntersectsWith(New Rectangle(location.X, location.Y, length, length)) Then
                 Return False
             Else
                 Return True
@@ -102,16 +121,39 @@
             speed = _velocity
             drawPaddle()
         End Sub
+        Public Function isColliding(ByVal _rectangle As Rectangle)
+            If _rectangle.IntersectsWith(New Rectangle(defRect.X, defRect.Y, defRect.Width, defRect.Height)) Then
+                Return True
+            Else
+                Return False
+            End If
+        End Function
     End Structure
+    'Private Sub New()
+    'Dim oldForm As Form
+    'oldForm = Me
+    'This call is required by the designer.
+    'InitializeComponent()
+    'Me.SetStyle(ControlStyles.DoubleBuffer, True)
+    'Me.SetStyle(ControlStyles.UserPaint, True)
+    'Me.SetStyle(ControlStyles.AllPaintingInWmPaint, True)
+    'Me.UpdateStyles()
+    'Form1 = oldForm
+    ' Add any initialization after the InitializeComponent() call.
+
+    'End Sub
     Private Sub Form1_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
         pucks = Me.CreateGraphics
+        TextBox3.Text = Me.Width
+        TextBox4.Text = Me.Height
+        Me.DoubleBuffered = True
         Timer1.Enabled = False
-        sides(0).X = Me.Width
+        sides(0).X = Me.Width - 19
         sides(0).Y = 0
         sides(0).Width = 10
         sides(0).Height = Me.Height
         sides(1).X = 0
-        sides(1).Y = Me.Height - 25
+        sides(1).Y = Me.Height - 40
         sides(1).Width = Me.Width
         sides(1).Height = 10
         sides(2).X = -10
@@ -125,30 +167,51 @@
     End Sub
     Private Sub Timer1_Tick(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Timer1.Tick
         Dim ticksPerSec As Short
+        'Dim buffer As Bitmap
+        'Dim backBuffer As Graphics
+
         ticksPerSec = 1000 / Timer1.Interval
         If GetAsyncKeyState(Keys.Up) Then
-            testpaddle.movePaddle(0, -(testpaddle.speed / ticksPerSec))
+            If Not testpaddle.isColliding(sides(3)) Then
+                testpaddle.movePaddle(0, -(testpaddle.speed / ticksPerSec))
+            Else
+                ' MsgBox("IS colliding")
+            End If
         End If
         If GetAsyncKeyState(Keys.Down) Then
-            testpaddle.movePaddle(0, (testpaddle.speed / ticksPerSec))
+            If Not testpaddle.isColliding(sides(1)) Then
+                testpaddle.movePaddle(0, (testpaddle.speed / ticksPerSec))
+            Else
+                ' MsgBox("IS colliding")
+            End If
         End If
-        pucks.Clear(Me.BackColor)
+        'pucks.Clear(Me.BackColor)
         For i = 0 To 3
-            If testPuck.isColliding(sides(i)) Then testPuck.wallCollisionDirection(i)
+            If testPuck.isColliding(sides(i)) Then testPuck.Collisiondirection(i)
         Next
+
+        pucks.Clear(Me.BackColor)
+        'pucks = Me.CreateGraphics
+        'buffer = New Bitmap(MyBase.Width, MyBase.Height)
+
         testPuck.updatePos(ticksPerSec)
         testPuck.drawPuck()
         testpaddle.drawPaddle()
 
+        'pucks = Graphics.FromImage(buffer)
+        'backBuffer = Me.CreateGraphics
+        'backBuffer.DrawImage(buffer, 0, 0, Me.Width, Me.Height)
     End Sub
     Private Sub Form1_Resize(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Resize
         pucks = Me.CreateGraphics
+        TextBox3.Text = Me.Width
+        TextBox4.Text = Me.Height
         sides(0).X = Me.Width
         sides(0).Y = 0
         sides(0).Width = 10
         sides(0).Height = Me.Height
         sides(1).X = 0
-        sides(1).Y = Me.Height - 20
+        sides(1).Y = Me.Height - 200
         sides(1).Width = Me.Width
         sides(1).Height = 10
         sides(2).X = -10
@@ -159,6 +222,7 @@
         sides(3).Y = -10
         sides(3).Width = Me.Width
         sides(3).Height = 10
+
     End Sub
 
     Private Sub Button1_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button1.Click
@@ -167,7 +231,13 @@
         Timer1.Enabled = True
     End Sub
 
-    Private Sub TextBox1_TextChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles TextBox1.TextChanged
-        Timer1.Interval = Val(TextBox1.Text)
+    Private Sub TextBox1_TextChanged(ByVal sender As System.Object, ByVal e As System.EventArgs)
+        'Timer1.Interval = Val(TextBox1.Text)
+    End Sub
+
+    Private Sub Button2_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button2.Click
+        Dim test As Graphics
+        test = Me.CreateGraphics
+        test.FillRectangle(Brushes.Brown, CInt(Val(TextBox1.Text)), CInt(Val(TextBox2.Text)), 3, 3)
     End Sub
 End Class
