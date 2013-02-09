@@ -226,7 +226,8 @@
     End Sub
 
     Private Sub Button1_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button1.Click
-        testPuck.initPuck(Brushes.Black, New Point(50, 50), 20, Rnd() * 359, 600)
+        testPuck.initPuck(Brushes.Black, New Point(50, 50), 20, Rnd() * 359, 1000)
+        'MsgBox("yolo")
         testpaddle.initPaddle(70, 70, 40, 100, Brushes.Black, 200)
         Timer1.Enabled = True
     End Sub
@@ -239,5 +240,13 @@
         Dim test As Graphics
         test = Me.CreateGraphics
         test.FillRectangle(Brushes.Brown, CInt(Val(TextBox1.Text)), CInt(Val(TextBox2.Text)), 3, 3)
+    End Sub
+
+    Private Sub Button4_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button4.Click
+
+    End Sub
+
+    Private Sub Button3_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button3.Click
+        MsgBox(Math.Cosh(Val(TextBox5.Text) / CInt(testPuck.length / 2)))
     End Sub
 End Class
