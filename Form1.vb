@@ -8,17 +8,44 @@
     Dim sides(3) As Rectangle
     'Dim allPucks(10) As puck
     Private Structure velocity
-        Public dX, dY As Double
-        Sub New(ByVal _dx As Double, ByVal _dy As Double)
-            dX = _dx
-            dY = _dy
+        Private dX, dY As Double
+        Public speed As Long
+        'TODO: REWORK VELOCITY
+        Sub New(ByVal _dx As Double, ByVal _dy As Double, ByVal _speed As Long)
+            If _dx > _dy Then
+                dX = _dx / Math.Abs(_dx)
+                dY = _dy / Math.Abs(_dx)
+            ElseIf _dy > _dx Then
+                dX = _dx / Math.Abs(_dy)
+                dY = _dy / Math.Abs(_dy)
+            Else
+                dX = _dx / Math.Abs(_dx)
+                dY = _dy / Math.Abs(_dx)
+            End If
+            speed = _speed
         End Sub
         Public Function inverse()
-            Return New velocity(-dX, -dY)
+            Return New velocity(-dX, -dY, speed)
         End Function
-        Public Function fromAngle(ByVal angle As Double, Optional ByVal speed As Long = 1)
-            Return New velocity(Math.Cos(angle) * speed, Math.Sin(angle) * speed)
+        Public Function inverseX()
+            Return New velocity(-dX, dY, speed)
         End Function
+        Public Function inverseY()
+            Return New velocity(dX, -dY, speed)
+        End Function
+        Public Function fromAngle(ByVal angle As Double, Optional ByVal _speed As Long = 1)
+            Return New velocity(Math.Cos(angle) * _speed, Math.Sin(angle) * _speed, _speed)
+        End Function
+        Public Function getdX()
+            Return dX
+        End Function
+        Public Function getdY()
+            Return dY
+        End Function
+        'Public Sub setdX(ByVal num As Double)
+        '    dX = num
+        'End Sub
+
     End Structure
     Private Structure puck
         Public length As Integer
@@ -28,27 +55,36 @@
         Private puckAsRect As Rectangle
         Private graphics As Graphics
         Public Sub updatePos(ByVal ticksPerSec As Integer)
-            location.X = location.X + (velocity.dX / ticksPerSec)
-            location.Y = location.Y + (velocity.dY / ticksPerSec)
+            location.X = location.X + (velocity.getdX * velocity.speed / ticksPerSec)
+            location.Y = location.Y + (velocity.getdY * velocity.speed / ticksPerSec)
+            'MsgBox(velocity.getdX / ticksPerSec)
         End Sub
         Public Sub drawPuck()
             Form1.pucks.FillRectangle(color, location.X, location.Y, length, length)
         End Sub
         Public Sub Collisiondirection(ByVal wallNum As Short) 'handles collisions with walls
+            'MsgBox("collision")
             Select Case wallNum
                 Case 0
-                    velocity.dX = -velocity.dX
+                    velocity = velocity.inverseX
                 Case 1
-                    velocity = velocity.inverse()
+                    velocity = velocity.inverseY
                 Case 2
-                    velocity.dX = -velocity.dX
+                    velocity = velocity.inverseX
                 Case 3
-                    velocity.dY = velocity.dY
+                    velocity = velocity.inverseY
 
             End Select
         End Sub
         Public Sub CollisionDirection(ByVal _paddle As paddle)
-
+            'Form1.Timer1.Enabled = False
+            Dim tempDX, tempDY As Double
+            Dim tempSPEED As Long
+            tempDX = location.X - (_paddle.defRect.X + _paddle.defRect.Width / 2)
+            tempDY = location.Y - (_paddle.defRect.Y + _paddle.defRect.Height / 2)
+            velocity = New velocity(tempDX, tempDY, tempSPEED)
+            'MsgBox(velocity.getdX & " " & velocity.getdY & " " & velocity.speed)
+            'Form1.Timer1.Enabled = True
         End Sub
         Public Sub initPuck(ByVal Color_ As Brush, ByVal location_ As Point, ByVal length_ As Integer, ByVal direction_ As Double, ByVal speed_ As Double)
             color = Color_
@@ -59,16 +95,16 @@
         End Sub
         Public Function isColliding(ByVal _rectangle As Rectangle)
             If _rectangle.IntersectsWith(New Rectangle(location.X, location.Y, length, length)) Then
-                Return False
-            Else
                 Return True
+            Else
+                Return False
             End If
         End Function
         Public Function isColliding(ByVal _paddle As paddle)
             If _paddle.defRect.IntersectsWith(New Rectangle(location.X, location.Y, length, length)) Then
-                Return False
-            Else
                 Return True
+            Else
+                Return False
             End If
         End Function
         Public Function isColliding(ByVal _puck As puck)
@@ -186,7 +222,7 @@
         For i = 0 To 3
             If testPuck.isColliding(sides(i)) Then testPuck.Collisiondirection(i)
         Next
-
+        If testPuck.isColliding(testpaddle) Then testPuck.Collisiondirection(testpaddle)
         pucks.Clear(Me.BackColor)
 
         'pucks = Me.CreateGraphics
@@ -209,7 +245,7 @@
         sides(0).Width = 10
         sides(0).Height = Me.Height
         sides(1).X = 0
-        sides(1).Y = Me.Height - 200
+        sides(1).Y = Me.Height - 40
         sides(1).Width = Me.Width
         sides(1).Height = 10
         sides(2).X = -10
@@ -220,30 +256,29 @@
         sides(3).Y = -10
         sides(3).Width = Me.Width
         sides(3).Height = 10
+        'pucks.Clear(Me.BackColor)
+        'For i = 0 To 3
+        'pucks.FillRectangle(Brushes.Black, sides(i))
+        'Next
 
     End Sub
-
     Private Sub Button1_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button1.Click
-        testPuck.initPuck(Brushes.Black, New Point(50, 50), 20, 0, 300)
+        testPuck.initPuck(Brushes.Black, New Point(500, 500), 20, 45, 400)
         testpaddle.initPaddle(70, 70, 40, 100, Brushes.Black, 200)
         Timer1.Enabled = True
         'pucks.DrawLine(Pens.Black, 50, 50, 150, 50)
     End Sub
-
     Private Sub TextBox1_TextChanged(ByVal sender As System.Object, ByVal e As System.EventArgs)
         'Timer1.Interval = Val(TextBox1.Text)
     End Sub
-
     Private Sub Button2_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button2.Click
         Dim test As Graphics
         test = Me.CreateGraphics
         test.FillRectangle(Brushes.Brown, CInt(Val(TextBox1.Text)), CInt(Val(TextBox2.Text)), 3, 3)
     End Sub
-
     Private Sub Button4_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button4.Click
 
     End Sub
-
     Private Sub Button3_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button3.Click
         MsgBox(Math.Cosh(Val(TextBox5.Text) / CInt(testPuck.length / 2)))
     End Sub
